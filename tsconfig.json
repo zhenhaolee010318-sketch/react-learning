@@ -1,7 +1,39 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
+  "compilerOptions": {
+    "target": "esnext", // 编译后代码的目标版本（ECMAScript）。
+    "jsx": "react-jsx",
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ], // 要包含的库文件。DOM、DOM.Iterable 和 ESNext 库文件是 TypeScript 开发中比较基础的依赖。
+    "module": "ESNext", // 使用的模块系统类型。ESNext 支持更多特性，比如动态导入等。
+    "moduleResolution": "bundler",
+    "useDefineForClassFields": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "#/*": [
+        "types/*"
+      ]
+    },
+    "noEmit": true, // 编译器不生成任何JS文件
+    "resolveJsonModule": true, // 允许导入json模块
+    "noUnusedLocals": true, // 消除未使用变量产生的警告
+    "noUnusedParameters": true, // 消除未使用参数产生的警告
+    "removeComments": true, // 是否移除注释。可以提高编译速度并减小生成文件的大小
+    "skipLibCheck": true, // 跳过编译器对引入库文件的检查，以加快构建速度
+    "allowImportingTsExtensions": true, // 允许在 import 导入语句中导入 .ts 或 .tsx 扩展名的模块，而不需要显式地指定扩展名
+    "allowJs": true, // 允许编译JavaScript文件
+  },
+  "include": [
+    "src",
+    "types"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
   ]
 }

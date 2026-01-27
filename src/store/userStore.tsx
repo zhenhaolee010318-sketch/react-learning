@@ -1,13 +1,13 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useState } from "react";
 import type { User } from "../types/user";
-import { create, useStore, type StoreApi } from 'zustand'
+import { createStore, useStore, type StoreApi } from 'zustand'
 
-interface UserStore {
+export interface UserStore {
     user: User | null;
     setUser: (user: User) => void;
 }
 
-export const createUserStore = create<UserStore>(set => ({
+export const createUserStore = createStore<UserStore>(set => ({
     user: null,
     setUser: (user: User) => set({ user })
 }))
@@ -17,16 +17,16 @@ export type TaskStoreApi = StoreApi<UserStore>
 
 export const UserContext = createContext<TaskStoreApi | null>(null)
 
-// export const UserProvider = ({ childern }: { childern: React.ReactNode }) => {
-//     const [store] = useState(createUserStore)
-//     return (
-//         <UserContext.Provider value={store} >
-//             {childern}
-//         </UserContext.Provider>
-//     )
-// }
+export const UserProvider = ({ children }: { children: React.ReactNode }) => {
+    const [store] = useState(createUserStore)
+    return (
+        <UserContext.Provider value={store} >
+            {children}
+        </UserContext.Provider>
+    )
+}
 
-export function useUser(selector: (state: UserStore) => User) {
+export function useUser<T>(selector: (state: UserStore) => T): T {
     const context = useContext(UserContext)
 
     return useStore(context!, selector)
