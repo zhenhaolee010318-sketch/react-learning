@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# TypeScript 编译输出（不应该存在，但以防万一）
+src/**/*.js
+src/**/*.jsx
+types/**/*.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

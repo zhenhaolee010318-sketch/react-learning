@@ -26,7 +26,7 @@
     "removeComments": true, // 是否移除注释。可以提高编译速度并减小生成文件的大小
     "skipLibCheck": true, // 跳过编译器对引入库文件的检查，以加快构建速度
     "allowImportingTsExtensions": true, // 允许在 import 导入语句中导入 .ts 或 .tsx 扩展名的模块，而不需要显式地指定扩展名
-    "allowJs": true, // 允许编译JavaScript文件
+    "allowJs": false, // 不允许编译JavaScript文件，只使用 TypeScript
   },
   "include": [
     "src",

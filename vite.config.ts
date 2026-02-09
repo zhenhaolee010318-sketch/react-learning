@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
-
+import mdx from '@mdx-js/rollup'
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   return {
@@ -11,8 +11,11 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       tsconfigPaths(),
+      mdx({
+        jsxImportSource: 'react',
+      }),
     ],
-    serve: {
+    server: {
       open: true,
       port: 3000,
       /**用来预热 */
@@ -24,6 +27,12 @@ export default defineConfig(({ mode }) => {
        * 
        */
       hmr: true
+    },
+     // esbuild 优化配置
+     esbuild: {
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
+      legalComments: 'none',
+      target: 'esnext',
     },
   }
 })

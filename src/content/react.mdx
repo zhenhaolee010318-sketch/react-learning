@@ -1,0 +1,235 @@
+# React 原理理解
+
+深入理解 React 的核心原理和工作机制。
+
+## 核心概念
+
+### 1. Virtual DOM
+
+React 使用 Virtual DOM 来提高性能，通过 diff 算法最小化 DOM 操作。
+
+### 2. 组件化
+
+React 采用组件化开发模式，每个组件都是独立的、可复用的。
+
+### 3. 状态管理
+
+React 通过 state 和 props 来管理组件的数据流。
+
+### 4. 生命周期
+
+理解 React 组件的生本章将深入探讨 React 应用的启动流程，从用户调用 API 到内部 Fiber 树的构建，以及初次渲染的概览
+## 📑 目录
+
+1. [组件的创建和销毁](#组件的创建和销毁)
+2. [组件的更新](#组件的更新)
+3. [组件的渲染](#组件的渲染)
+4. [组件的卸载](#组件的卸载)
+5. [组件的错误处理](#组件的错误处理)
+6. [组件的性能优化](#组件的性能优化)
+7. [组件的测试](#组件的测试)
+8. [组件的调试](#组件的调试)
+9. [组件的优化](#组件的优化)
+
+## 组件的创建和销毁
+<br />
+1. CreateRoot 创建根节点
+在React 17中 我们使用的是
+
+```typescript
+import ReactDOM from 'react-dom';
+import App from './App';
+
+ReactDOM.render(
+  <App />,
+  document.getElementById('root')
+);
+
+通过这个把 App挂在到了root节点上。 但是后来 React 18 中改为了createRoot（19 将 render给删除了）
+
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+```
+不过方法不同但是他们所做的职责 都是把 
+**主要职责是初始化 React 应用的运行环境并返回一个可用于渲染和卸载组件的 ReactDOMRoot 对象。**
+
+#### 主要做的事情
+1. 接受一个真实的dom 节点，就是我的react应用会被挂载的地方。
+2. 创建React根（FiberRoot）
+ -2.1 
+ 他会在内部创建一个FiberRootNode的对象，存储应用的顶层状态， 待处理的更新，当前的Fiber树等信息
+ 
+ -2.2 也会有一个特殊的Fiber 节点叫做HostRootFiber，是你组件树在Fiber的最顶层节点。FiberRootNode 和 HostRootFiber 会相互引用，建立起 React 内部管理结构的基础。
+ 
+ -2.3 并发特性  React 的并发特性 (Concurrent Mode)，这意味着 React 可以更智能地安排渲染工作，提高应用的响应性。
+ 
+ -2.4 事件系统，它会为指定的 DOM 容器初始化 React 的事件系统，确保组件中的事件处理器能够正常工作
+ 
+ -2.5 返回一个ReactDOMRoot ，有个方法是render方法， render('app') 这样就把 App 组件挂载到了 root 节点上。
+
+```typescript
+function createRoot(container, options) {
+  // 1. 验证容器是否有效
+  if (!isValidContainer(container)) {
+    throw new Error('Target container is not a DOM element.');
+  }
+
+  // 2. 初始化选项 (options)
+  // 3. 创建 FiberRootNode (核心)
+  const root = createContainer(
+    container,          // DOM 容器节点
+    ConcurrentRoot,     // 根节点类型 (并发模式)
+    null,               // hydrationCallbacks (非 hydrate 模式)
+    isStrictMode,       // 是否严格模式
+    false,              // concurrentUpdatesByDefaultOverride
+    identifierPrefix,   // 标识符前缀
+    onUncaughtError,    // 未捕获错误处理
+    onCaughtError,      // 已捕获错误处理 (来自错误边界)
+    onRecoverableError, // 可恢复错误处理
+    transitionCallbacks,// 过渡回调
+    null                // formState
+  );
+  // 4. 标记 DOM 容器，建立与 FiberRoot 的关联
+  markContainerAsRoot(root.current, container);
+  // 5. 在容器上监听所有支持的事件
+  listenToAllSupportedEvents(container);
+  // 6. 返回一个 ReactDOMRoot 实例
+  return new ReactDOMRoot(root);
+}
+```
+## 区别 hydrateRoot
+作为一个 注水操作
+1. 它也接收一个 DOM 元素作为容器，但与 createRoot 不同的是，这个容器期望已经包含了由服务端预先渲染好的 HTML 结构。
+2. 在hydrateRoot内部中会调用createHydrationContainer函数，
+而 createHydrationContainer函数的主要目标是建立一个配置为水合模式的 FiberRootNode ，
+并立即调度一个特殊的“水合更新”。
+这个更新将启动 React 的协调过程，但与常规渲染不同，
+它会尝试将 initialChildren 与 containerInfo 中已存在的 DOM 结构进行匹配和复用，
+而不是完全重新创建 DOM。
+```typescript
+function hydrateRoot(container, initialChildren ,options) {
+  // 1. 验证容器是否有效
+  if (!isValidContainer(container)) {
+    throw new Error('Target container is not a DOM element.');
+  }
+   // 2. 初始化选项 (options)
+  // 3. 创建用于 Hydration 的 FiberRootNode (核心)
+ const root = createHydrationContainer(
+     // 4. 标记 DOM 容器，建立与 FiberRoot 的关联
+  markContainerAsRoot(root.current, container);
+  // 5. 在容器上监听所有支持的事件
+  listenToAllSupportedEvents(container);
+  // 6. 返回一个 ReactDOMHydrationRoot 实例
+  return new ReactDOMHydrationRoot(root);// 2. 初始化选项 (options)
+}
+``` 
+
+
+在hydrateRoot内部中会调用createHydrationContainer函数，而 createHydrationContainer函数的主要目标是建立一个配置为水合模式的 FiberRootNode ，并立即调度一个特殊的“水合更新”。这个更新将启动 React 的协调过程，但与常规渲染不同，它会尝试将 initialChildren 与 containerInfo 中已存在的 DOM 结构进行匹配和复用，而不是完全重新创建 DOM。
+
+在 createHydrationContainer 内部函数中，主要的步骤包括：
+
+-requestUpdateLane(current) : 获取一个用于本次更新的优先级“赛道”(Lane)。React 的并发调度模型使用 Lanes 来管理不同优先级的更新。
+
+-enableHydrationLaneScheduling : 这是一个特性开关，如果启用，可能会对水合的 Lane 进行特殊调整 (例如，通过 getBumpedLaneForHydrationByLane 提升其优先级或赋予特定属性)，以确保水合过程能尽快或以特定方式执行。
+
+-createUpdate(lane) : 创建一个更新对象。对于初始水合，这个更新对象通常不携带 payload (即没有新的 element 数据)，因为其目的是触发对 initialChildren (已在 FiberRootNode 中设置) 的水合处理，而不是渲染新的内容。
+-update.callback : 如果用户在调用 hydrateRoot 时提供了回调函数，这个回调会被关联到更新对象上，并在水合操作完成后执行。
+
+-enqueueUpdate(current, update, lane) : 将创建的更新对象添加到 HostRoot Fiber 的更新队列中。这使得该更新成为待处理状态。
+
+-scheduleInitialHydrationOnRoot(root, lane) : 这是触发实际水合工作调度的关键函数。它会确保 React 的调度器 (Scheduler) 知道有一个水合任务需要在指定的 lane 上执行。这个函数内部会进一步调用调度相关的 API (如 ensureRootIsScheduled ) 来安排工作循环的启动。
+
+对比总结： 
+1. createRoot 还是 hydrateRoot
+他们都回去调用createContainer函数，但是hydrateRoot会调用createHydrationContainer函数
+在这个方法里面，他们都回去调用 createFiberRoot 方法，来创建一个 FiberRootNode 对象。这是个核心
+FiberRootNode 是用来管理整个fiber树的状态和更新
+它存储了指向当前生效的 Fiber 树 (current 指针)、容器信息 (containerInfo)、
+各种配置（如 tag、hydrate）、
+错误处理回调 (onUncaughtError, onCaughtError, onRecoverableError)、
+以及与并发特性相关的上下文（如 identifierPrefix, formState, transitionCallbacks）。
+建立双向链接:
+
+root.current = uninitializedFiber;: FiberRootNode 的 current 属性指向当前活动（或即将成为活动）的 Fiber 树的根 Fiber 节点。在初始化时，这就是我们刚创建的 uninitializedFiber。
+uninitializedFiber.stateNode = root;: 相反地，HostRoot Fiber 节点的 stateNode 属性指向它所属的 FiberRootNode。这种双向链接使得在遍历 Fiber 树时可以方便地访问到 FiberRootNode，反之亦然。
+
+## 深入理解
+
+### Fiber 架构
+
+React 16 引入了 Fiber 架构，实现了可中断的渲染过程。
+
+Fiber 树的指针结构
+Fiber 节点之间通过以下三个关键指针形成树结构，这使得 React 可以高效地遍历和处理组件：
+
+child: 从父节点指向其第一个子节点。React 通过这个指针开始处理子组件。
+sibling: 从一个子节点指向其下一个兄弟节点。这允许 React 处理同一父级下的所有子节点，形成一个单向链表。
+return: 从子节点指回其父节点。当一个节点及其所有子孙节点都处理完毕后，React 通过 return 指针返回到父节点继续处理兄弟节点或完成父节点的工作。
+
+基本属性
+1. tag
+根据tag去分别 不同的Fiber节点类型。
+比如 HostRoot这个项目的根节点， HostComponent 是原生dom节点
+FunctionComponent， ClassCompoennt ，memoComponent， forwardRefComponent， HostText，
+ContextProvider， SuspenseComponent，
+
+树结构与属性
+
+总共三个属性， child 指向第一个字节点，sibling指向第一个兄弟节点，return指向父节点。
+这样就形成了一个单项的链表
+
+
+```typescript
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+    </div>
+  );
+}
+```
+
+副作用标志系统
+React Fiber 的副作用标志系统 (Flags / Effect Tags) 是其协调和提交机制的核心部分。每个 Fiber 节点都有一个 flags (在旧版本或某些上下文中也可能被称为 effectTag) 属性，它是一个位掩码 (bitmask)，用来标记该 Fiber 节点在 Commit 阶段需要执行哪些类型的副作用操作。
+
+这些标志是在 Render 阶段的 beginWork 和 completeWork 过程中被设置的。当 workInProgress 树构建完成后，React 会遍历这棵树，收集所有带有副作用标志的 Fiber 节点，并在 Commit 阶段按照特定顺序执行这些操作。
+
+我们可以将这些标志大致分为以下几类。请注意，具体的标志名称和值可能随 React 版本演进，以下基于常见的 Fiber Flags 定义进行解释
+
+### 任务调度 Scheduler
+利用 Event Loop 的“空闲时段”：
+Scheduler 如何与 Event Loop 配合？
+想象一下浏览器是一个繁忙的城市，Event Loop 就是这个城市的交通调度系统。它确保各种任务（比如用户点击按钮、动画播放、网络请求响应、以及 React 的更新）能够有序进行，不会造成交通瘫痪（即页面卡顿）。
+
+React Scheduler 的角色就像一个智能的任务规划师，它需要将 React 的更新工作（比如重新计算组件、对比 Virtual DOM）安排到这个繁忙的交通系统中，同时还要保证：
+
+用户体验优先： 不能因为 React 在埋头苦干，就让用户觉得页面卡死了，点击没反应。
+高效完成任务： React 的更新也得尽快完成，让用户看到最新的界面。
+那么Scheduler 如何与 Event Loop 配合？，核心思想是：化整为零，见缝插针。
+
+接收任务，但不立即霸占“道路”：
+
+当 React 需要更新时（比如你调用了 setState），它不会立即开始所有工作。而是告诉 Scheduler：“我有一个更新任务，请帮忙安排一下。” 调用了 unstable_scheduleCallback;
+Scheduler 会给这个任务一个优先级(基于 Lane 模型)和一个过期时间 ( expirationTime )，比如“这个更新很重要，需要快点处理”或者“这个更新不那么急，可以等等”。
+Scheduler 不会直接长时间占用 JavaScript 的执行线程（也就是 Event Loop 当前正在处理的“道路”）。
+它会通过一种机制（在浏览器中主要是 MessageChannel，可以理解为一种特殊的邮差服务）向 Event Loop 发送一个信号：“嘿，Event Loop，当你处理完手头紧急的事情（比如响应用户输入），并且有空的时候，请叫我一下，我有些工作要做。”
+MessageChannel 发送的这个信号，会在 Event Loop 的宏任务队列中排队。这意味着 React 的工作会和其他的宏任务（如 setTimeout 回调、I/O 操作完成后的回调）一起等待被调度。
+为什么用 MessageChannel (宏任务) 而不是 setTimeout(fn, 0)? MessageChannel 通常比 setTimeout(fn, 0) 有更短的延迟和更可靠的调度，因为它被设计用于这种低延迟的通信。setTimeout(fn, 0) 的实际延迟可能因浏览器而异，且有最小延迟限制 (通常是 4ms 左右)。
+为什么不用微任务 (如 Promise.then)? 微任务会在当前宏任务执行完毕后、下一次 UI 渲染之前立即执行。如果 Scheduler 的工作量很大，并且都放在微任务中，可能会导致长时间阻塞主线程，使得 UI 无法响应用户交互和渲染更新，这与 Scheduler 的目标相悖。
+
+### Hooks 原理
+
+Hooks 让函数组件也能使用状态和生命周期，理解其实现原理很重要。
+
+## 学习资源
+
+- React 官方文档
+- React 源码解析
+- 性能优化技巧

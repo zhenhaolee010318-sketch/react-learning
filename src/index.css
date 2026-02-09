@@ -19,3 +19,124 @@ body {
   color: var(--color-foreground);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+/* 动画效果 */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+
+/* MDX 内容样式增强 */
+.prose {
+  max-width: none;
+}
+
+.prose pre {
+  background-color: #1a1a1a;
+  color: #e5e5e5;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.prose code {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.prose pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.prose blockquote {
+  border-left: 4px solid #3b82f6;
+  padding-left: 1rem;
+  margin-left: 0;
+  font-style: italic;
+}
+
+.dark .prose pre {
+  background-color: #0a0a0a;
+}
+
+.dark .prose code {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* MDX 内容样式增强 */
+.mdx-content {
+  max-width: none;
+}
+
+/* 代码块滚动条样式 */
+.mdx-content pre::-webkit-scrollbar {
+  height: 8px;
+}
+
+.mdx-content pre::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.mdx-content pre::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.mdx-content pre::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* 代码块行号效果（可选） */
+.mdx-content pre {
+  position: relative;
+  counter-reset: line;
+}
+
+/* 列表项动画 */
+.mdx-content li {
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.mdx-content li:hover {
+  transform: translateX(4px);
+  color: inherit;
+}
+
+/* 代码块复制按钮区域（预留） */
+.mdx-content pre {
+  position: relative;
+}
+
+/* 链接动画增强 */
+.mdx-content a {
+  position: relative;
+}
+
+.mdx-content a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: currentColor;
+  transition: width 0.3s ease;
+}
+
+.mdx-content a:hover::after {
+  width: 100%;
+}
